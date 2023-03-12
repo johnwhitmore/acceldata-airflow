@@ -10,7 +10,7 @@ def upload_to_s3(filename: str, key: str, bucket_name: str) -> None:
 
 
 with DAG(
-    dag_id='s3_dag',
+    dag_id='s3_dag2',
     schedule_interval='@daily',
     start_date=datetime(2022, 3, 1),
     catchup=False
