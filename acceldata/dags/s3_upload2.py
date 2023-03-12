@@ -21,7 +21,7 @@ with DAG(
         task_id='upload_to_s3',
         python_callable=upload_to_s3,
         op_kwargs={
-            'filename': '/opt/bitnami/dags/s3_upload.py',
+            'filename': '/opt/bitnami/airflow/dags/git_acceldata-dags/dags:s3_upload.py',
             'key': 's3_upload.py',
             'bucket_name': 'airflow-data'
         }
