@@ -13,12 +13,12 @@ endpoint_url = 'http://192.168.1.201:9000'
 
 # data range to process
 min_month = "2019-01"
-max_month = "2019-01"
+max_month = "2019-02"
 # Set up the S3 client
 s3 = boto3.resource('s3',
-                  aws_access_key_id=access_key_id,
-                  aws_secret_access_key=secret_access_key,
-                  endpoint_url=endpoint_url)
+                    aws_access_key_id=access_key_id,
+                    aws_secret_access_key=secret_access_key,
+                    endpoint_url=endpoint_url)
 
 src_urlbase = 'https://s3.amazonaws.com/tripdata/'
 bucket = 'airflow-data'
@@ -27,7 +27,7 @@ raw_path = 'citibike/raw/'
 dag = DAG(
     dag_id="citibike_etl",
     start_date=datetime(2023, 3, 12),
-    schedule_interval=timedelta(hours=3) ,
+    schedule_interval=timedelta(hours=3),
     catchup=False,
     max_active_runs=1)
 
@@ -51,7 +51,8 @@ def move_file(filename):
     # create a zipfile object myzip reading from the infile
     with ZipFile(infile) as myzip:
         print(myzip.namelist())
-        # grab the first file from the archive, which is the actual .csv.  The second is a MACOS resource fork and breaks pandas.
+        # grab the first file from the archive, which is the actual .csv.
+        # The second is a MACOS resource fork and breaks pandas.
         csvfilename = myzip.namelist()[0]
         print(f"csvfilename: {csvfilename}")
         # read the csv file from the archive into csvdata
@@ -72,6 +73,8 @@ def move_file(filename):
 
     # Write the file contents to S3 using the S3 client
     s3.Object(bucket, key).put(Body=outfile.read())
+
+
 #    s3.put_object(Bucket=bucket, Key=key, Body=outfile.read())
 
 def download_data():
@@ -80,23 +83,24 @@ def download_data():
     for month in months:
         # move the file using name generated from the month
         move_file(month.strftime('%Y%m-citibike-tripdata.csv.zip'))
+
+
 def read_data():
     s3_bucket = s3.Bucket(bucket)
     prefix_objs = s3_bucket.objects.filter(Prefix=raw_path)
-    # read the s3 bucket data into pandas
-    df = pd.read_csv(
-        f"s3://{bucket}/{raw_path}201901-citibike-tripdata.csv.zip",
-        storage_options={
-            "key": access_key_id,
-            "secret": secret_access_key,
-            "client_kwargs": {"endpoint_url": endpoint_url}
-        }
-    )
+    full_df = pd.DataFrame()
+    for obj in prefix_objs:
+        if obj.key.endswith('.zip'):
+            print(f"reading {obj.key}")
+            body = obj.get()['Body'].read()
+            df = pd.read_csv(BytesIO(body), compression='zip')
+            print(df)
+            full_df = pd.concat([full_df, df])
+
     print("finished reading")
-    print(df)
-    print("printed df")
-    df.describe()
-    print("described df")
+    print(full_df)
+    print("printed full_df")
+
 
 task_download_data = PythonOperator(
     task_id='download_src_data',
