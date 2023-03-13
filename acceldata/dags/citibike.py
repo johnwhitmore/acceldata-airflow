@@ -13,7 +13,7 @@ endpoint_url = 'http://192.168.1.201:9000'
 
 # data range to process
 min_month = "2019-01"
-max_month = "2019-02"
+max_month = "2020-12"
 # Set up the S3 client
 s3 = boto3.resource('s3',
                     aws_access_key_id=access_key_id,
@@ -99,7 +99,6 @@ def read_data():
 
     print("finished reading")
     print(full_df)
-    print("printed full_df")
 
 
 task_download_data = PythonOperator(
