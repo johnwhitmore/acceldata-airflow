@@ -100,13 +100,13 @@ def read_data():
 
 task_download_data = PythonOperator(
     task_id='download_src_data',
-    python_callable=download_data(),
+    python_callable=download_data,
     dag=dag
 )
 
 task_read_data = PythonOperator(
     task_id='read_rides_data',
-    python_callable=read_data(),
+    python_callable=read_data,
     dag=dag
 )
 
