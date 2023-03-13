@@ -25,9 +25,9 @@ raw_path = 'citibike/raw/'
 
 dag = DAG(
     dag_id="citibike_etl",
-    catchup=False,
-    default_args=args,
+    start_date=datetime(2023,03,12),
     schedule_interval=timedelta(hours=3) ,
+    catchup=False,
     max_active_runs=1)
 
 
