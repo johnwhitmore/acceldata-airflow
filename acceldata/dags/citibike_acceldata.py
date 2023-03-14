@@ -18,7 +18,14 @@ import logging
 access_key_id = 'o2odjCI59uVYRhbm'
 secret_access_key = 'L83dBpJZD4RxrQSezpON5VFnWfzUxaVH'
 endpoint_url = 'http://192.168.1.201:9000'
+bucket = 'airflow-data'
+
+src_urlbase = 'https://s3.amazonaws.com/tripdata/'
+raw_path = 'citibike/raw/'
+
 job_settings = JobMetadata(owner='Demo', team='demo_team', codeLocation='...')
+ds_http_src = Node(asset_uid=f"{src_urlbase}")
+ds_citibike_raw = Node(asset_uid=f"{bucket}/{raw_path}")
 
 # data range to process
 min_month = "2019-01"
@@ -29,9 +36,6 @@ s3 = boto3.resource('s3',
                     aws_secret_access_key=secret_access_key,
                     endpoint_url=endpoint_url)
 
-src_urlbase = 'https://s3.amazonaws.com/tripdata/'
-bucket = 'airflow-data'
-raw_path = 'citibike/raw/'
 
 pipeline_uid = "torch.citibike.pipeline"
 pipeline_name = "Citibike Rides ETL"
@@ -90,6 +94,8 @@ def move_file(filename):
 #    s3.put_object(Bucket=bucket, Key=key, Body=outfile.read())
 
 @job(job_uid='download_rides_data',
+     inputs=[ds_http_src],
+    outputs=[ds_citibike_raw],
     metadata=job_settings)
 def download_data(**context):
     # Generate the months we want to process
@@ -100,6 +106,7 @@ def download_data(**context):
 
 @job(
     job_uid='read_rides_data',
+    inputs=[ds_citibike_raw],
     metadata=job_settings
 )
 def read_data(**context):
