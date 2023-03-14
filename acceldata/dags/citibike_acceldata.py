@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from io import BytesIO
@@ -7,6 +8,8 @@ import requests
 import boto3
 import pandas as pd
 from acceldata_airflow_sdk.dag import DAG
+from acceldata_airflow_sdk.operators.torch_initialiser_operator import TorchInitializer
+from acceldata_sdk.models.pipeline import PipelineMetadata
 
 
 access_key_id = 'o2odjCI59uVYRhbm'
@@ -27,6 +30,7 @@ bucket = 'airflow-data'
 raw_path = 'citibike/raw/'
 
 pipeline_uid = "torch.citibike.pipeline"
+pipeline_name = "Citibike Rides ETL"
 default_args = {'start_date': datetime(2022, 5, 31)}
 dag = DAG(
     dag_id='citibike_rides_etl',
@@ -104,6 +108,14 @@ def read_data():
     print("finished reading")
     # print(full_df)
 
+torch_initializer_task = TorchInitializer(
+    task_id='torch_pipeline_initializer',
+    pipeline_uid=pipeline_uid,
+    pipeline_name=pipeline_name,
+    connection_id="torch_connection_id",
+    meta=PipelineMetadata(owner='Demo', team='demo_team', codeLocation='...'),
+    dag=dag
+)
 
 task_download_data = PythonOperator(
     task_id='download_src_data',
@@ -117,4 +129,4 @@ task_read_data = PythonOperator(
     dag=dag
 )
 
-task_download_data >> task_read_data
+torch_pipeline_initializer >> task_download_data >> task_read_data
