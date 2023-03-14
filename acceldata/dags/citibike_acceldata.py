@@ -129,4 +129,4 @@ task_read_data = PythonOperator(
     dag=dag
 )
 
-torch_pipeline_initializer >> task_download_data >> task_read_data
+torch_initializer_task >> task_download_data >> task_read_data
