@@ -24,8 +24,8 @@ src_urlbase = 'https://s3.amazonaws.com/tripdata/'
 raw_path = 'citibike/raw/'
 
 job_settings = JobMetadata(owner='Demo', team='demo_team', codeLocation='...')
-ds_http_src = Node(asset_uid=f"{src_urlbase}")
-ds_citibike_raw = Node(asset_uid=f"{bucket}/{raw_path}")
+#ds_http_src = Node(asset_uid=f"{src_urlbase}")
+#ds_citibike_raw = Node(asset_uid=f"{bucket}/{raw_path}")
 
 # data range to process
 min_month = "2019-01"
@@ -94,8 +94,7 @@ def move_file(filename):
 #    s3.put_object(Bucket=bucket, Key=key, Body=outfile.read())
 
 @job(job_uid='download_rides_data',
-     inputs=[ds_http_src],
-    outputs=[ds_citibike_raw],
+     inputs=[Node(job_uid='read_rides_data')],
     metadata=job_settings)
 def download_data(**context):
     # Generate the months we want to process
@@ -106,7 +105,6 @@ def download_data(**context):
 
 @job(
     job_uid='read_rides_data',
-    inputs=[ds_citibike_raw],
     metadata=job_settings
 )
 def read_data(**context):
