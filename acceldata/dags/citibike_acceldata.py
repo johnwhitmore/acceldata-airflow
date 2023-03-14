@@ -91,7 +91,7 @@ def move_file(filename):
 
 @job(job_uid='download_rides_data',
     metadata=job_settings)
-def download_data():
+def download_data(**context):
     # Generate the months we want to process
     months = pd.period_range(min_month, max_month, freq='M')
     for month in months:
@@ -102,7 +102,7 @@ def download_data():
     job_uid='read_rides_data',
     metadata=job_settings
 )
-def read_data():
+def read_data(**context):
     s3_bucket = s3.Bucket(bucket)
     prefix_objs = s3_bucket.objects.filter(Prefix=raw_path)
     full_df = pd.DataFrame()
