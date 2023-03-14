@@ -10,11 +10,15 @@ import pandas as pd
 from acceldata_airflow_sdk.dag import DAG
 from acceldata_airflow_sdk.operators.torch_initialiser_operator import TorchInitializer
 from acceldata_sdk.models.pipeline import PipelineMetadata
+from acceldata_airflow_sdk.decorators.job import job
+from acceldata_sdk.models.job import JobMetadata, Node
+import logging
 
 
 access_key_id = 'o2odjCI59uVYRhbm'
 secret_access_key = 'L83dBpJZD4RxrQSezpON5VFnWfzUxaVH'
 endpoint_url = 'http://192.168.1.201:9000'
+job_settings = JobMetadata(owner='Demo', team='demo_team', codeLocation='...')
 
 # data range to process
 min_month = "2019-01"
@@ -85,6 +89,8 @@ def move_file(filename):
 
 #    s3.put_object(Bucket=bucket, Key=key, Body=outfile.read())
 
+@job(job_uid='download_rides_data',
+    metadata=job_settings)
 def download_data():
     # Generate the months we want to process
     months = pd.period_range(min_month, max_month, freq='M')
@@ -92,7 +98,10 @@ def download_data():
         # move the file using name generated from the month
         move_file(month.strftime('%Y%m-citibike-tripdata.csv.zip'))
 
-
+@job(
+    job_uid='read_rides_data',
+    metadata=job_settings
+)
 def read_data():
     s3_bucket = s3.Bucket(bucket)
     prefix_objs = s3_bucket.objects.filter(Prefix=raw_path)
@@ -108,6 +117,20 @@ def read_data():
     print("finished reading")
     # print(full_df)
 
+@job(
+    job_uid='create_run_id',
+    metadata=job_settings
+)
+def create_run_id(**context):
+    now = datetime.now()
+    run_id = int(now.strftime("%Y%m%d%H%M%S"))
+
+    task_instance = context['ti']
+    task_instance.xcom_push(key="run_id", value=run_id)
+    logging.info('Run ID created: ' + str(run_id))
+    return run_id
+
+
 torch_initializer_task = TorchInitializer(
     task_id='torch_pipeline_initializer',
     pipeline_uid=pipeline_uid,
@@ -116,6 +139,14 @@ torch_initializer_task = TorchInitializer(
     meta=PipelineMetadata(owner='Demo', team='demo_team', codeLocation='...'),
     dag=dag
 )
+
+#Create run ID
+create_run_id = PythonOperator(
+    task_id='create_run_id',
+    python_callable=create_run_id,
+    dag=dag
+)
+
 
 task_download_data = PythonOperator(
     task_id='download_src_data',
@@ -129,4 +160,4 @@ task_read_data = PythonOperator(
     dag=dag
 )
 
-torch_initializer_task >> task_download_data >> task_read_data
+torch_initializer_task >> create_run_id >> task_download_data >> task_read_data
