@@ -112,7 +112,7 @@ torch_initializer_task = TorchInitializer(
     task_id='torch_pipeline_initializer',
     pipeline_uid=pipeline_uid,
     pipeline_name=pipeline_name,
-    connection_id="torch_connection_id",
+    #connection_id="torch_connection_id",
     meta=PipelineMetadata(owner='Demo', team='demo_team', codeLocation='...'),
     dag=dag
 )
