@@ -95,10 +95,10 @@ def read_data():
             body = obj.get()['Body'].read()
             df = pd.read_csv(BytesIO(body), compression='zip')
             print(df)
-            full_df = pd.concat([full_df, df])
+            # full_df = pd.concat([full_df, df])
 
     print("finished reading")
-    print(full_df)
+    # print(full_df)
 
 
 task_download_data = PythonOperator(
