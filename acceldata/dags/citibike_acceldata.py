@@ -94,7 +94,6 @@ def move_file(filename):
 #    s3.put_object(Bucket=bucket, Key=key, Body=outfile.read())
 
 @job(job_uid='download_rides_data',
-     inputs=[Node(job_uid='read_rides_data')],
     metadata=job_settings)
 def download_data(**context):
     # Generate the months we want to process
@@ -105,6 +104,7 @@ def download_data(**context):
 
 @job(
     job_uid='read_rides_data',
+    inputs=[Node(job_uid='download_rides_data')],
     metadata=job_settings
 )
 def read_data(**context):
