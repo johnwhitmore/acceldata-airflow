@@ -102,6 +102,7 @@ def download_data(**context):
         # move the file using name generated from the month
         move_file(month.strftime('%Y%m-citibike-tripdata.csv.zip'))
 
+
 @job(
     job_uid='read_rides_data',
     inputs=[Node(job_uid='download_rides_data')],
