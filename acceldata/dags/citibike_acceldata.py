@@ -27,6 +27,7 @@ aws_bucket = Variable.get("aws_bucket")
 src_urlbase = 'https://s3.amazonaws.com/tripdata/'
 raw_path = 'citibike/raw/'
 processed_path = 'citibike/processed/'
+daily_path = 'citibike/daily/'
 
 job_settings = JobMetadata(owner='Demo', team='demo_team', codeLocation='...')
 #ds_http_src = Node(asset_uid=f"{src_urlbase}")
@@ -155,6 +156,7 @@ def aggregate_rides_data(**context):
     for obj in prefix_objs:
         if obj.key.endswith('.parquet'):
             print(f"reading {obj.key}")
+            daily_key = obj.key.replace(processed_path,daily_path)
             body = obj.get()['Body'].read()
             df = pd.read_parquet(BytesIO(body))
             print(df)
@@ -177,7 +179,10 @@ def aggregate_rides_data(**context):
             )
 
             print(daily_summary)
-
+            out_buffer = BytesIO()
+            daily_summary.to_parquet(out_buffer, index=False)
+            out_buffer.seek(0)
+            aws_s3.Object(aws_bucket, daily_key).put(Body=out_buffer.read())
 
 @job(
     job_uid='create_run_id',
