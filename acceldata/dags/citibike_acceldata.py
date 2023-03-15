@@ -120,7 +120,7 @@ def download_data(**context):
 )
 def read_data(**context):
     lab_s3_bucket = lab_s3.Bucket(minio_bucket)
-     prefix_objs = lab_s3_bucket.objects.filter(Prefix=raw_path)
+    prefix_objs = lab_s3_bucket.objects.filter(Prefix=raw_path)
     full_df = pd.DataFrame()
     for obj in prefix_objs:
         if obj.key.endswith('.zip'):
