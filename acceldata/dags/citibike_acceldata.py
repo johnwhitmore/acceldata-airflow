@@ -15,13 +15,17 @@ from acceldata_sdk.models.job import JobMetadata, Node
 import logging
 
 
-access_key_id = 'o2odjCI59uVYRhbm'
-secret_access_key = 'L83dBpJZD4RxrQSezpON5VFnWfzUxaVH'
-endpoint_url = 'http://192.168.1.201:9000'
-bucket = 'airflow-data'
+minio_access_key_id = 'o2odjCI59uVYRhbm'
+minio_secret_access_key = 'L83dBpJZD4RxrQSezpON5VFnWfzUxaVH'
+minio_endpoint_url = 'http://192.168.1.201:9000'
+minio_bucket = 'airflow-data'
+aws_access_key_id = ''
+aws_secret_access_key = ''
+aws_bucket = 'airflow-bucket-08641-c48595bd-7922673'
 
 src_urlbase = 'https://s3.amazonaws.com/tripdata/'
 raw_path = 'citibike/raw/'
+processed_path = 'citibike/processed'
 
 job_settings = JobMetadata(owner='Demo', team='demo_team', codeLocation='...')
 #ds_http_src = Node(asset_uid=f"{src_urlbase}")
@@ -30,11 +34,17 @@ job_settings = JobMetadata(owner='Demo', team='demo_team', codeLocation='...')
 # data range to process
 min_month = "2019-01"
 max_month = "2019-03"
-# Set up the S3 client
-s3 = boto3.resource('s3',
-                    aws_access_key_id=access_key_id,
-                    aws_secret_access_key=secret_access_key,
-                    endpoint_url=endpoint_url)
+# Set up the lab S3 connection
+lab_s3 = boto3.resource('s3',
+                        aws_access_key_id=minio_access_key_id,
+                        aws_secret_access_key=minio_secret_access_key,
+                        endpoint_url=minio_endpoint_url
+                        )
+# Set up the AWS S3 connection
+aws_s3 = boto3.resource('s3',
+                        aws_access_key_id=aws_access_key_id,
+                        aws_secret_access_key=aws_secret_access_key
+                        )
 
 
 pipeline_uid = "torch.citibike.pipeline"
@@ -88,7 +98,7 @@ def move_file(filename):
     key = f"{raw_path}{filename}"
 
     # Write the file contents to S3 using the S3 client
-    s3.Object(bucket, key).put(Body=outfile.read())
+    lab_s3.Object(minio_bucket, key).put(Body=outfile.read())
 
 
 #    s3.put_object(Bucket=bucket, Key=key, Body=outfile.read())
@@ -109,8 +119,8 @@ def download_data(**context):
     metadata=job_settings
 )
 def read_data(**context):
-    s3_bucket = s3.Bucket(bucket)
-    prefix_objs = s3_bucket.objects.filter(Prefix=raw_path)
+    lab_s3_bucket = lab_s3.Bucket(minio_bucket)
+     prefix_objs = lab_s3_bucket.objects.filter(Prefix=raw_path)
     full_df = pd.DataFrame()
     for obj in prefix_objs:
         if obj.key.endswith('.zip'):
@@ -118,9 +128,17 @@ def read_data(**context):
             body = obj.get()['Body'].read()
             df = pd.read_csv(BytesIO(body), compression='zip')
             print(df)
+
+            parquet_key = obj.key.replace(".zip", ".parquet")
+            print(f"key: {obj.key}, parquet_key = {parquet_key}")
+            out_buffer = BytesIO()
+            df.to_parquet(out_buffer, index=False)
+            aws_s3.Object(aws_bucket, parquet_key).put(Body=out_buffer.read())
+
+
             # full_df = pd.concat([full_df, df])
 
-    print("finished reading")
+    print("finished processing")
     # print(full_df)
 
 @job(
