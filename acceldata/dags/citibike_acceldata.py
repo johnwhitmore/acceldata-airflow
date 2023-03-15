@@ -184,6 +184,7 @@ def aggregate_rides_data(**context):
             out_buffer.seek(0)
             aws_s3.Object(aws_bucket, daily_key).put(Body=out_buffer.read())
 
+
 @job(
     job_uid='create_run_id',
     metadata=job_settings
