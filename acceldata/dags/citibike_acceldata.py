@@ -25,7 +25,7 @@ aws_bucket = 'airflow-bucket-08641-c48595bd-7922673'
 
 src_urlbase = 'https://s3.amazonaws.com/tripdata/'
 raw_path = 'citibike/raw/'
-processed_path = 'citibike/processed'
+processed_path = 'citibike/processed/'
 
 job_settings = JobMetadata(owner='Demo', team='demo_team', codeLocation='...')
 #ds_http_src = Node(asset_uid=f"{src_urlbase}")
@@ -120,7 +120,7 @@ def download_data(**context):
 )
 def read_data(**context):
     lab_s3_bucket = lab_s3.Bucket(minio_bucket)
-    prefix_objs = lab_s3_bucket.objects.filter(Prefix=raw_path)
+    prefix_objs = lab_s3_bucket.objects.filter(Prefix=processed_path)
     full_df = pd.DataFrame()
     for obj in prefix_objs:
         if obj.key.endswith('.zip'):
