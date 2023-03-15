@@ -16,10 +16,10 @@ import logging
 from airflow.models import Variable
 
 
-minio_access_key_id = 'o2odjCI59uVYRhbm'
-minio_secret_access_key = 'L83dBpJZD4RxrQSezpON5VFnWfzUxaVH'
-minio_endpoint_url = 'http://192.168.1.201:9000'
-minio_bucket = 'airflow-data'
+minio_access_key_id = Variable.get("minio_access_key_id")
+minio_secret_access_key = Variable.get("minio_secret_access_key")
+minio_endpoint_url = Variable.get("minio_endpoint_url")
+minio_bucket = Variable.get("minio_bucket")
 aws_access_key_id = Variable.get("aws_access_key_id")
 aws_secret_access_key = Variable.get("aws_secret_access_key")
 aws_bucket = Variable.get("aws_bucket")
@@ -122,7 +122,7 @@ def download_data(**context):
 def read_data(**context):
     lab_s3_bucket = lab_s3.Bucket(minio_bucket)
     prefix_objs = lab_s3_bucket.objects.filter(Prefix=raw_path)
-    full_df = pd.DataFrame()
+    #full_df = pd.DataFrame()
     for obj in prefix_objs:
         if obj.key.endswith('.zip'):
             print(f"reading {obj.key}")
@@ -137,12 +137,47 @@ def read_data(**context):
             df.to_parquet(out_buffer, index=False)
             out_buffer.seek(0)
             aws_s3.Object(aws_bucket, parquet_key).put(Body=out_buffer.read())
-
-
             # full_df = pd.concat([full_df, df])
 
     print("finished processing")
     # print(full_df)
+
+
+@job(
+    job_uid='aggregate_rides_data',
+    inputs=[Node(job_uid='read_rides_data')],
+    metadata=job_settings
+)
+def aggregate_rides_data(**context):
+    current_year = datetime.now().year
+    aws_s3_bucket = aws_s3.Bucket(aws_bucket)
+    prefix_objs = aws_s3_bucket.objects.filter(Prefix=processed_path)
+    for obj in prefix_objs:
+        if obj.key.endswith('.parquet'):
+            print(f"reading {obj.key}")
+            body = obj.get()['Body'].read()
+            df = pd.read_parquet(BytesIO(body))
+            print(df)
+            # "tripduration","starttime","stoptime","start station id","start station name",
+            # "start station latitude","start station longitude","end station id","end station name",
+            # "end station latitude","end station longitude","bikeid","usertype","birth year","gender"
+            # convert starttime column to datetime format
+            df['starttime'] = pd.to_datetime(df['starttime'])
+            df['date'] = df['starttime'].dt.date
+            df['age'] = current_year - df['birth year']
+
+            daily_summary = df.groupby('date').agg(
+                rides=('transaction_datetime', 'size'),
+                duration_total=('tripduration', 'sum'),
+                duration_avg=('tripduration', 'mean'),
+                age_min=('age', 'min'),
+                age_med=('age', 'median'),
+                age_max=('age', 'max'),
+                subscriber_pct=('usertype', lambda x: (x == 'Subscriber').sum() / len(x) * 100)
+            )
+
+            print(daily_summary)
+
 
 @job(
     job_uid='create_run_id',
@@ -187,4 +222,12 @@ task_read_data = PythonOperator(
     dag=dag
 )
 
-torch_initializer_task >> create_run_id >> task_download_data >> task_read_data
+task_aggregate_rides_data = PythonOperator(
+    task_id='aggregate_rides_daily',
+    python_callable=aggregate_rides_data,
+    provide_context=True,
+    dag=dag
+)
+
+
+torch_initializer_task >> create_run_id >> task_download_data >> task_read_data >> task_aggregate_rides_data
