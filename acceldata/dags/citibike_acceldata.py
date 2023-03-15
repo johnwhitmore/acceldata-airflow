@@ -13,15 +13,16 @@ from acceldata_sdk.models.pipeline import PipelineMetadata
 from acceldata_airflow_sdk.decorators.job import job
 from acceldata_sdk.models.job import JobMetadata, Node
 import logging
+from airflow.models import Variable
 
-
+foo = Variable.get("foo")
 minio_access_key_id = 'o2odjCI59uVYRhbm'
 minio_secret_access_key = 'L83dBpJZD4RxrQSezpON5VFnWfzUxaVH'
 minio_endpoint_url = 'http://192.168.1.201:9000'
 minio_bucket = 'airflow-data'
-aws_access_key_id = 'AKIARIHXI3JYUNYYFB56'
-aws_secret_access_key = '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'
-aws_bucket = 'airflow-bucket-08641-c48595bd-7922673'
+aws_access_key_id = Variable.get("aws_access_key_id")
+aws_secret_access_key = Variable.get("aws_secret_access_key")
+aws_bucket = Variable.get("aws_bucket")
 
 src_urlbase = 'https://s3.amazonaws.com/tripdata/'
 raw_path = 'citibike/raw/'
