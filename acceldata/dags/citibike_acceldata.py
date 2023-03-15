@@ -15,7 +15,7 @@ from acceldata_sdk.models.job import JobMetadata, Node
 import logging
 from airflow.models import Variable
 
-foo = Variable.get("foo")
+
 minio_access_key_id = 'o2odjCI59uVYRhbm'
 minio_secret_access_key = 'L83dBpJZD4RxrQSezpON5VFnWfzUxaVH'
 minio_endpoint_url = 'http://192.168.1.201:9000'
