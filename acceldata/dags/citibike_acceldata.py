@@ -167,7 +167,7 @@ def aggregate_rides_data(**context):
             df['age'] = current_year - df['birth year']
 
             daily_summary = df.groupby('date').agg(
-                rides=('transaction_datetime', 'size'),
+                rides=('starttime', 'size'),
                 duration_total=('tripduration', 'sum'),
                 duration_avg=('tripduration', 'mean'),
                 age_min=('age', 'min'),
