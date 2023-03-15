@@ -129,10 +129,11 @@ def read_data(**context):
             df = pd.read_csv(BytesIO(body), compression='zip')
             print(df)
 
-            parquet_key = obj.key.replace(".zip", ".parquet")
+            parquet_key = obj.key.replace(".csv.zip", ".parquet")
             print(f"key: {obj.key}, parquet_key = {parquet_key}")
             out_buffer = BytesIO()
             df.to_parquet(out_buffer, index=False)
+            out_buffer.seek(0)
             aws_s3.Object(aws_bucket, parquet_key).put(Body=out_buffer.read())
 
 
