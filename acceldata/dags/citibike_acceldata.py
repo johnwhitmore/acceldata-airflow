@@ -120,7 +120,7 @@ def download_data(**context):
 )
 def read_data(**context):
     lab_s3_bucket = lab_s3.Bucket(minio_bucket)
-    prefix_objs = lab_s3_bucket.objects.filter(Prefix=processed_path)
+    prefix_objs = lab_s3_bucket.objects.filter(Prefix=raw_path)
     full_df = pd.DataFrame()
     for obj in prefix_objs:
         if obj.key.endswith('.zip'):
@@ -130,6 +130,7 @@ def read_data(**context):
             print(df)
 
             parquet_key = obj.key.replace(".csv.zip", ".parquet")
+            parquet_key = parquet_key.replace(raw_path,processed_path)
             print(f"key: {obj.key}, parquet_key = {parquet_key}")
             out_buffer = BytesIO()
             df.to_parquet(out_buffer, index=False)
