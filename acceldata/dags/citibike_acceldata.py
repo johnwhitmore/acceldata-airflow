@@ -163,7 +163,7 @@ def aggregate_rides_data(**context):
     for obj in prefix_objs:
         if obj.key.endswith('.parquet'):
             print(f"reading {obj.key}")
-            daily_key = obj.key.replace(processed_path,daily_path)
+            daily_key = obj.key.replace(processed_path,daily_path).replace("tripdata", "daily")
             body = obj.get()['Body'].read()
             df = pd.read_parquet(BytesIO(body))
             print(df)
