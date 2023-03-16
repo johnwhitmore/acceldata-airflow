@@ -129,6 +129,8 @@ def read_data(**context):
             print(f"reading {obj.key}")
             body = obj.get()['Body'].read()
             df = pd.read_csv(BytesIO(body), compression='zip')
+            df['starttime'] = pd.to_datetime(df['starttime'])
+            df['stoptime'] = pd.to_datetime(df['stoptime'])
             print(df)
             # insert unique first column
             df.insert(loc=0, column='row_id',
@@ -168,7 +170,7 @@ def aggregate_rides_data(**context):
             # "start station latitude","start station longitude","end station id","end station name",
             # "end station latitude","end station longitude","bikeid","usertype","birth year","gender"
             # convert starttime column to datetime format
-            df['starttime'] = pd.to_datetime(df['starttime'])
+            #df['starttime'] = pd.to_datetime(df['starttime'])
             df['date'] = df['starttime'].dt.date
             df['age'] = current_year - df['birth year']
 
