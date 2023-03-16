@@ -183,7 +183,7 @@ def aggregate_rides_data(**context):
                 age_max=('age', 'max'),
                 subscriber_pct=('usertype', lambda x: (x == 'Subscriber').sum() / len(x) * 100)
             )
-            daily_summary['rowid'] = df.reset_index().index
+            daily_summary['rowid'] = daily_summary.reset_index().index
             daily_summary.insert(0, 'rowid', daily_summary.pop('rowid'))
 
             print(daily_summary)
