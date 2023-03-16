@@ -48,7 +48,7 @@ aws_s3 = boto3.resource('s3',
                         aws_secret_access_key=aws_secret_access_key
                         )
 
-
+ds_daily_agg = Node(asset_uid='citibike_aws.Daily')
 pipeline_uid = "torch.citibike.pipeline"
 pipeline_name = "Citibike Rides ETL"
 default_args = {'start_date': datetime(2022, 5, 31)}
@@ -154,6 +154,7 @@ def read_data(**context):
 @job(
     job_uid='aggregate_rides_data',
     inputs=[Node(job_uid='read_rides_data')],
+    outputs=[ds_daily_agg],
     metadata=job_settings
 )
 def aggregate_rides_data(**context):
