@@ -130,6 +130,7 @@ def read_data(**context):
             body = obj.get()['Body'].read()
             df = pd.read_csv(BytesIO(body), compression='zip')
             print(df)
+            df.insert(loc=0, column='row_id', value=(df['bikeid']+df['starttime']))
 
             parquet_key = obj.key.replace(".csv.zip", ".parquet")
             parquet_key = parquet_key.replace(raw_path,processed_path)
@@ -169,7 +170,7 @@ def aggregate_rides_data(**context):
             df['age'] = current_year - df['birth year']
 
             daily_summary = df.groupby('date').agg(
-                rides=('starttime', 'size'),
+                trip_count=('starttime', 'size'),
                 duration_total=('tripduration', 'sum'),
                 duration_avg=('tripduration', 'mean'),
                 age_min=('age', 'min'),
@@ -177,6 +178,8 @@ def aggregate_rides_data(**context):
                 age_max=('age', 'max'),
                 subscriber_pct=('usertype', lambda x: (x == 'Subscriber').sum() / len(x) * 100)
             )
+            daily_summary.set_index(df.columns[-1], inplace=True)
+            daily_summary.reset_index(inplace=True)
 
             print(daily_summary)
             out_buffer = BytesIO()
