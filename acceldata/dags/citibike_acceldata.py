@@ -130,7 +130,10 @@ def read_data(**context):
             body = obj.get()['Body'].read()
             df = pd.read_csv(BytesIO(body), compression='zip')
             print(df)
-            df.insert(loc=0, column='row_id', value=(df['bikeid']+df['starttime']))
+            # insert unique first column
+            df.insert(loc=0, column='row_id',
+                      value=(df['bikeid'].astype(str) + '_' +
+                             df['starttime'].apply(lambda x: str(int(datetime.timestamp(x))))))
 
             parquet_key = obj.key.replace(".csv.zip", ".parquet")
             parquet_key = parquet_key.replace(raw_path,processed_path)
