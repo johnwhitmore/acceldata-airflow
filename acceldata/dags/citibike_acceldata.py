@@ -185,12 +185,15 @@ def aggregate_rides_data(**context):
                 age_max=('age', 'max'),
                 subscriber_pct=('usertype', lambda x: (x == 'Subscriber').sum() / len(x) * 100)
             )
-            daily_summary['rowid'] = daily_summary.reset_index().index
+            #daily_summary['rowid'] = daily_summary.reset_index().index
+            #daily_summary.insert(0, 'rowid', daily_summary.pop('rowid'))
+            daily_summary.reset_index(inplace=True)
+            daily_summary['rowid'] = daily_summary.index
             daily_summary.insert(0, 'rowid', daily_summary.pop('rowid'))
 
             print(daily_summary)
             out_buffer = BytesIO()
-            daily_summary.to_parquet(out_buffer, index=False)
+            daily_summary.to_parquet(out_buffer, index=True)
             out_buffer.seek(0)
             aws_s3.Object(aws_bucket, daily_key).put(Body=out_buffer.read())
 
