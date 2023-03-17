@@ -188,8 +188,8 @@ def aggregate_rides_data(**context):
             #daily_summary['rowid'] = daily_summary.reset_index().index
             #daily_summary.insert(0, 'rowid', daily_summary.pop('rowid'))
             daily_summary.reset_index(inplace=True)
-            daily_summary['rowid'] = daily_summary.index
-            daily_summary.insert(0, 'rowid', daily_summary.pop('rowid'))
+            #daily_summary['rowid'] = daily_summary.index
+            #daily_summary.insert(0, 'rowid', daily_summary.pop('rowid'))
 
             print(daily_summary)
             out_buffer = BytesIO()
